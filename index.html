@@ -134,6 +134,7 @@
             font-size: 2.5em;
             font-weight: bold;
             letter-spacing: 2px;
+            transition: opacity 0.3s ease;
         }
 
         .input-area {
@@ -520,8 +521,8 @@
             <div class="score-display" id="scoreDisplay">Score: 0/0</div>
 
             <div class="word-display">
-                <div class="label" id="wordLabel">Listen or read:</div>
-                <div class="word" id="wordDisplay">WORD</div>
+                <div class="label" id="wordLabel">Listen or read: (disappears in 10s)</div>
+                <div class="word" id="wordDisplay" onclick="revealWord()">WORD</div>
             </div>
 
             <div id="hintsContainer"></div>
@@ -588,6 +589,7 @@
         let score = 0;
         let answered = false;
         let correctAnswer = false;
+        let wordTimer = null;
 
         function startMode(mode) {
             currentMode = mode;
@@ -609,7 +611,11 @@
 
         function loadWord() {
             const wordObj = words[currentWordIndex];
-            document.getElementById('wordDisplay').textContent = wordObj.word.toUpperCase();
+            const wordDisplay = document.getElementById('wordDisplay');
+            wordDisplay.textContent = wordObj.word.toUpperCase();
+            wordDisplay.style.opacity = '1';
+            wordDisplay.style.visibility = 'visible';
+
             document.getElementById('progressText').textContent =
                 `Word ${currentWordIndex + 1} of ${words.length}`;
             document.getElementById('progressFill').style.width =
@@ -646,7 +652,34 @@
                 `;
             }
 
+            // Clear previous timer
+            if (wordTimer) clearTimeout(wordTimer);
+
+            // Hide word after 10 seconds
+            wordTimer = setTimeout(() => {
+                wordDisplay.style.opacity = '0.2';
+                wordDisplay.style.cursor = 'pointer';
+                wordDisplay.title = 'Click to show word again';
+            }, 10000);
+
             document.getElementById('spellingInput').focus();
+        }
+
+        function revealWord() {
+            const wordDisplay = document.getElementById('wordDisplay');
+            if (wordDisplay.style.opacity !== '1') {
+                wordDisplay.style.opacity = '1';
+                wordDisplay.style.cursor = 'default';
+                wordDisplay.title = '';
+                // Reset timer
+                if (wordTimer) clearTimeout(wordTimer);
+                const wordObj = words[currentWordIndex];
+                wordTimer = setTimeout(() => {
+                    wordDisplay.style.opacity = '0.2';
+                    wordDisplay.style.cursor = 'pointer';
+                    wordDisplay.title = 'Click to show word again';
+                }, 10000);
+            }
         }
 
         function checkAnswer() {
@@ -726,6 +759,7 @@
             score = 0;
             answered = false;
             correctAnswer = false;
+            if (wordTimer) clearTimeout(wordTimer);
 
             document.getElementById('modeSelection').style.display = 'block';
             document.getElementById('levelSelection').style.display = 'none';
