@@ -1017,10 +1017,12 @@
         }
 
         function checkAnswer() {
+            console.log('checkAnswer() called, answered:', answered);
             if (answered) return;
 
             const input = document.getElementById('spellingInput');
             const userAnswer = input.value.trim().toLowerCase();
+            console.log('User answer:', userAnswer);
             const currentWords = getWords();
             const correctWord = currentWords[currentWordIndex].word.toLowerCase();
 
@@ -1046,14 +1048,18 @@
             updateStatsDisplay();
 
             if (currentWordIndex < currentWords.length - 1) {
+                console.log('Showing nextButtonGroup, currentWordIndex:', currentWordIndex, 'length:', currentWords.length);
                 document.getElementById('nextButtonGroup').style.display = 'grid';
             } else {
+                console.log('Last word, showing results in 1500ms');
                 setTimeout(showResults, 1500);
             }
         }
 
         function nextWord() {
+            console.log('nextWord() called, currentWordIndex:', currentWordIndex);
             currentWordIndex++;
+            console.log('New currentWordIndex:', currentWordIndex, 'Total words:', getWords().length);
             if (currentWordIndex < getWords().length) {
                 loadWord();
             } else {
