@@ -573,8 +573,19 @@
         <h1>✨ Spelling Master ✨</h1>
         <p class="subtitle">Master these tricky words!</p>
 
+        <!-- Name Entry -->
+        <div id="nameEntry">
+            <p style="text-align: center; font-weight: bold; color: #667eea; margin-bottom: 20px; font-size: 1.1em;">What's your name?</p>
+            <input type="text" id="nameInput" placeholder="Enter your name..." style="width: 100%; padding: 15px; font-size: 1.1em; border: 3px solid #667eea; border-radius: 15px; text-align: center; margin-bottom: 20px; font-family: 'Comic Sans MS', cursive;">
+            <button class="btn btn-submit" onclick="startWithName()" style="width: 100%;">Let's Go! 🚀</button>
+            <div style="margin-top: 30px; padding: 20px; background: #f0f0f0; border-radius: 15px;">
+                <p style="text-align: center; font-weight: bold; color: #667eea; margin-bottom: 15px;">🏆 Top Scorers</p>
+                <div id="leaderboard" style="font-size: 0.95em;"></div>
+            </div>
+        </div>
+
         <!-- Language Selection -->
-        <div id="languageSelection">
+        <div id="languageSelection" style="display: none;">
             <p style="text-align: center; font-weight: bold; color: #667eea; margin-bottom: 20px;">Choose Language:</p>
             <div class="mode-selector">
                 <button class="mode-btn" onclick="selectLanguage('english')">🇬🇧 English Words</button>
@@ -721,49 +732,46 @@
         let correctAnswer = false;
         let wordTimer = null;
         let currentLanguage = 'english'; // 'english' or 'irish'
-        let stats = {
-            english: {
-                totalAttempts: 0,
-                correctAnswers: 0,
-                lastPlayed: null,
-                streak: 0,
-                wordStats: {}
-            },
-            irish: {
-                totalAttempts: 0,
-                correctAnswers: 0,
-                lastPlayed: null,
-                streak: 0,
-                wordStats: {}
-            }
-        };
+        let currentName = ''; // Child's name
+        let allStats = {}; // All children's stats
 
         // Initialize stats on load
         function initStats() {
             const saved = localStorage.getItem('spellingStats');
             if (saved) {
-                stats = JSON.parse(saved);
+                allStats = JSON.parse(saved);
             }
-            // Initialize word stats if not present
-            englishWords.forEach(w => {
-                if (!stats.english.wordStats[w.word]) {
-                    stats.english.wordStats[w.word] = { correct: 0, attempts: 0 };
-                }
-            });
-            irishWords.forEach(w => {
-                if (!stats.irish.wordStats[w.word]) {
-                    stats.irish.wordStats[w.word] = { correct: 0, attempts: 0 };
-                }
-            });
-            updateStreak();
+        }
+
+        function getChildStats() {
+            if (!allStats[currentName]) {
+                allStats[currentName] = {
+                    english: {
+                        totalAttempts: 0,
+                        correctAnswers: 0,
+                        lastPlayed: null,
+                        streak: 0,
+                        wordStats: {}
+                    },
+                    irish: {
+                        totalAttempts: 0,
+                        correctAnswers: 0,
+                        lastPlayed: null,
+                        streak: 0,
+                        wordStats: {}
+                    }
+                };
+            }
+            return allStats[currentName];
         }
 
         function saveStats() {
-            localStorage.setItem('spellingStats', JSON.stringify(stats));
+            localStorage.setItem('spellingStats', JSON.stringify(allStats));
         }
 
         function updateStreak() {
-            const langStats = stats[currentLanguage];
+            const childStats = getChildStats();
+            const langStats = childStats[currentLanguage];
             const today = new Date().toDateString();
             const lastDate = langStats.lastPlayed ? new Date(langStats.lastPlayed).toDateString() : null;
 
@@ -788,7 +796,8 @@
         }
 
         function updateStatsDisplay() {
-            const langStats = stats[currentLanguage];
+            const childStats = getChildStats();
+            const langStats = childStats[currentLanguage];
             const accuracy = langStats.totalAttempts > 0
                 ? Math.round((langStats.correctAnswers / langStats.totalAttempts) * 100)
                 : 0;
@@ -806,6 +815,62 @@
             utterance.pitch = 1;
             window.speechSynthesis.cancel();
             window.speechSynthesis.speak(utterance);
+        }
+
+        function updateLeaderboard() {
+            const leaderboardDiv = document.getElementById('leaderboard');
+            const scores = [];
+
+            // Collect all scores
+            for (const name in allStats) {
+                const englishStats = allStats[name].english;
+                const irishStats = allStats[name].irish;
+
+                if (englishStats.totalAttempts > 0) {
+                    const accuracy = Math.round((englishStats.correctAnswers / englishStats.totalAttempts) * 100);
+                    scores.push({ name, language: 'English', accuracy });
+                }
+                if (irishStats.totalAttempts > 0) {
+                    const accuracy = Math.round((irishStats.correctAnswers / irishStats.totalAttempts) * 100);
+                    scores.push({ name, language: 'Irish', accuracy });
+                }
+            }
+
+            // Sort by accuracy descending
+            scores.sort((a, b) => b.accuracy - a.accuracy);
+
+            // Display top 5
+            if (scores.length === 0) {
+                leaderboardDiv.innerHTML = '<p style="text-align: center; color: #999;">No scores yet. Be the first!</p>';
+            } else {
+                let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                scores.slice(0, 5).forEach((score, index) => {
+                    const medal = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'][index];
+                    html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; border-radius: 8px;">
+                        <span>${medal} <strong>${score.name}</strong> (${score.language})</span>
+                        <span style="color: #667eea; font-weight: bold;">${score.accuracy}%</span>
+                    </div>`;
+                });
+                html += '</div>';
+                leaderboardDiv.innerHTML = html;
+            }
+        }
+
+        function startWithName() {
+            const nameInput = document.getElementById('nameInput');
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                alert('Please enter your name!');
+                return;
+            }
+
+            currentName = name;
+            getChildStats(); // Initialize stats for this child
+
+            document.getElementById('nameEntry').style.display = 'none';
+            document.getElementById('languageSelection').style.display = 'block';
+            updateStatsDisplay();
         }
 
         function selectLanguage(lang) {
@@ -933,7 +998,8 @@
         function updateWordStats(isCorrect) {
             const words = getWords();
             const word = words[currentWordIndex].word;
-            const langStats = stats[currentLanguage];
+            const childStats = getChildStats();
+            const langStats = childStats[currentLanguage];
             if (!langStats.wordStats[word]) {
                 langStats.wordStats[word] = { correct: 0, attempts: 0 };
             }
@@ -1028,21 +1094,32 @@
             score = 0;
             answered = false;
             correctAnswer = false;
+            currentName = '';
             if (wordTimer) {
                 wordTimer.forEach(timer => clearTimeout(timer));
             }
 
-            document.getElementById('languageSelection').style.display = 'block';
+            document.getElementById('nameEntry').style.display = 'block';
+            document.getElementById('languageSelection').style.display = 'none';
             document.getElementById('modeSelection').style.display = 'none';
             document.getElementById('levelSelection').style.display = 'none';
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('nameInput').value = '';
+            updateLeaderboard();
         }
 
         // Initialize on page load
         window.addEventListener('load', function() {
             initStats();
-            updateStatsDisplay();
+            updateLeaderboard();
+        });
+
+        // Allow Enter key on name input
+        document.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && document.getElementById('nameEntry').style.display !== 'none') {
+                startWithName();
+            }
         });
 
         // Allow Enter key to submit
