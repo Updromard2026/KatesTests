@@ -135,6 +135,65 @@
             font-weight: bold;
             letter-spacing: 2px;
             transition: opacity 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .audio-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .audio-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
+        }
+
+        .audio-btn:active {
+            transform: scale(0.95);
+        }
+
+        .stats-bar {
+            background: #f0f0f0;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            text-align: center;
+            font-size: 0.95em;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #764ba2;
         }
 
         .input-area {
@@ -338,6 +397,31 @@
                 font-size: 1em;
             }
 
+            .stats-bar {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 10px;
+                padding: 12px;
+                margin-bottom: 15px;
+            }
+
+            .stat-item {
+                padding: 8px;
+            }
+
+            .stat-label {
+                font-size: 0.8em;
+            }
+
+            .stat-value {
+                font-size: 1.1em;
+            }
+
+            .audio-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5em;
+            }
+
             .mode-selector {
                 grid-template-columns: 1fr;
                 gap: 15px;
@@ -511,6 +595,21 @@
         <div id="gameArea">
             <div class="mode-title" id="modeTitle"></div>
 
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value" id="streakDisplay">0 days</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Accuracy</div>
+                    <div class="stat-value" id="accuracyDisplay">0%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total Plays</div>
+                    <div class="stat-value" id="totalPlaysDisplay">0</div>
+                </div>
+            </div>
+
             <div class="progress">
                 <div class="progress-text" id="progressText">Word 1 of 4</div>
                 <div class="progress-bar">
@@ -522,7 +621,10 @@
 
             <div class="word-display">
                 <div class="label" id="wordLabel">Listen or read: (disappears in 10s)</div>
-                <div class="word" id="wordDisplay" onclick="revealWord()">WORD</div>
+                <div class="word" id="wordDisplay" onclick="revealWord()">
+                    <button class="audio-btn" onclick="speakWord(event)" title="Click to hear pronunciation">🔊</button>
+                    <span id="wordText">WORD</span>
+                </div>
             </div>
 
             <div id="hintsContainer"></div>
@@ -590,6 +692,75 @@
         let answered = false;
         let correctAnswer = false;
         let wordTimer = null;
+        let stats = {
+            totalAttempts: 0,
+            correctAnswers: 0,
+            lastPlayed: null,
+            streak: 0,
+            wordStats: {}
+        };
+
+        // Initialize stats on load
+        function initStats() {
+            const saved = localStorage.getItem('spellingStats');
+            if (saved) {
+                stats = JSON.parse(saved);
+            }
+            // Initialize word stats if not present
+            words.forEach(w => {
+                if (!stats.wordStats[w.word]) {
+                    stats.wordStats[w.word] = { correct: 0, attempts: 0 };
+                }
+            });
+            updateStreak();
+        }
+
+        function saveStats() {
+            localStorage.setItem('spellingStats', JSON.stringify(stats));
+        }
+
+        function updateStreak() {
+            const today = new Date().toDateString();
+            const lastDate = stats.lastPlayed ? new Date(stats.lastPlayed).toDateString() : null;
+
+            if (lastDate === today) {
+                // Already played today
+                return;
+            }
+
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            if (lastDate === yesterday.toDateString()) {
+                // Played yesterday, continue streak
+                stats.streak++;
+            } else {
+                // Start new streak
+                stats.streak = 1;
+            }
+
+            stats.lastPlayed = new Date().toISOString();
+            saveStats();
+        }
+
+        function updateStatsDisplay() {
+            const accuracy = stats.totalAttempts > 0
+                ? Math.round((stats.correctAnswers / stats.totalAttempts) * 100)
+                : 0;
+            document.getElementById('streakDisplay').textContent = stats.streak + ' day' + (stats.streak !== 1 ? 's' : '');
+            document.getElementById('accuracyDisplay').textContent = accuracy + '%';
+            document.getElementById('totalPlaysDisplay').textContent = stats.totalAttempts;
+        }
+
+        function speakWord(event) {
+            event.stopPropagation();
+            const wordText = words[currentWordIndex].word;
+            const utterance = new SpeechSynthesisUtterance(wordText);
+            utterance.rate = 0.8;
+            utterance.pitch = 1;
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
 
         function startMode(mode) {
             currentMode = mode;
@@ -606,15 +777,19 @@
             currentWordIndex = 0;
             score = 0;
             answered = false;
+            updateStreak();
             loadWord();
         }
 
         function loadWord() {
             const wordObj = words[currentWordIndex];
+            const wordText = document.getElementById('wordText');
+            wordText.textContent = wordObj.word.toUpperCase();
             const wordDisplay = document.getElementById('wordDisplay');
-            wordDisplay.textContent = wordObj.word.toUpperCase();
             wordDisplay.style.opacity = '1';
             wordDisplay.style.visibility = 'visible';
+
+            updateStatsDisplay();
 
             document.getElementById('progressText').textContent =
                 `Word ${currentWordIndex + 1} of ${words.length}`;
@@ -682,6 +857,22 @@
             }
         }
 
+        function updateWordStats(isCorrect) {
+            const word = words[currentWordIndex].word;
+            if (!stats.wordStats[word]) {
+                stats.wordStats[word] = { correct: 0, attempts: 0 };
+            }
+            stats.wordStats[word].attempts++;
+            if (isCorrect) {
+                stats.wordStats[word].correct++;
+            }
+            stats.totalAttempts++;
+            if (isCorrect) {
+                stats.correctAnswers++;
+            }
+            saveStats();
+        }
+
         function checkAnswer() {
             if (answered) return;
 
@@ -694,10 +885,12 @@
             if (userAnswer === correctWord) {
                 correctAnswer = true;
                 score++;
+                updateWordStats(true);
                 document.getElementById('feedback').textContent = '🎉 Perfect! Great job!';
                 document.getElementById('feedback').className = 'feedback correct';
                 input.className = 'spelling-input correct';
             } else {
+                updateWordStats(false);
                 document.getElementById('feedback').textContent =
                     `❌ Not quite. It's spelled: ${words[currentWordIndex].word}`;
                 document.getElementById('feedback').className = 'feedback incorrect';
@@ -706,6 +899,7 @@
 
             document.getElementById('scoreDisplay').textContent =
                 `Score: ${score}/${currentWordIndex + 1}`;
+            updateStatsDisplay();
 
             if (currentWordIndex < words.length - 1) {
                 document.getElementById('nextButtonGroup').style.display = 'grid';
@@ -766,6 +960,12 @@
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('resultsArea').style.display = 'none';
         }
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            initStats();
+            updateStatsDisplay();
+        });
 
         // Allow Enter key to submit
         document.addEventListener('keypress', function(event) {
