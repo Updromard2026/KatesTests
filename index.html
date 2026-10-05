@@ -1020,7 +1020,8 @@
 
             const input = document.getElementById('spellingInput');
             const userAnswer = input.value.trim().toLowerCase();
-            const correctWord = words[currentWordIndex].word.toLowerCase();
+            const currentWords = getWords();
+            const correctWord = currentWords[currentWordIndex].word.toLowerCase();
 
             answered = true;
 
@@ -1034,7 +1035,7 @@
             } else {
                 updateWordStats(false);
                 document.getElementById('feedback').textContent =
-                    `❌ Not quite. It's spelled: ${words[currentWordIndex].word}`;
+                    `❌ Not quite. It's spelled: ${currentWords[currentWordIndex].word}`;
                 document.getElementById('feedback').className = 'feedback incorrect';
                 input.className = 'spelling-input incorrect';
             }
@@ -1043,7 +1044,7 @@
                 `Score: ${score}/${currentWordIndex + 1}`;
             updateStatsDisplay();
 
-            if (currentWordIndex < words.length - 1) {
+            if (currentWordIndex < currentWords.length - 1) {
                 document.getElementById('nextButtonGroup').style.display = 'grid';
             } else {
                 setTimeout(showResults, 1500);
@@ -1128,7 +1129,7 @@
             if (event.key === 'Enter' && document.getElementById('gameArea').style.display === 'block') {
                 if (!answered) {
                     checkAnswer();
-                } else if (currentWordIndex < words.length - 1) {
+                } else if (currentWordIndex < getWords().length - 1) {
                     nextWord();
                 }
             }
