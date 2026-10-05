@@ -1071,9 +1071,10 @@
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('resultsArea').style.display = 'block';
 
-            const percentage = Math.round((score / words.length) * 100);
+            const currentWords = getWords();
+            const percentage = Math.round((score / currentWords.length) * 100);
             document.getElementById('finalScore').textContent =
-                `${score} out of ${words.length}!`;
+                `${score} out of ${currentWords.length}!`;
 
             let emoji = '😊';
             let message = '';
