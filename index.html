@@ -1054,7 +1054,7 @@
 
         function nextWord() {
             currentWordIndex++;
-            if (currentWordIndex < words.length) {
+            if (currentWordIndex < getWords().length) {
                 loadWord();
             } else {
                 showResults();
