@@ -982,13 +982,13 @@
             // Set fade timers based on difficulty level
             let fadeTime, hideTime;
             if (currentLevel === 1) {
-                // Easy: 10 seconds visible, then 10 seconds faded
+                // Easy: 10 seconds visible, then 15 seconds faded
+                fadeTime = 10000;
+                hideTime = 25000;
+            } else if (currentLevel === 2) {
+                // Medium: 10 seconds visible, then 10 seconds faded
                 fadeTime = 10000;
                 hideTime = 20000;
-            } else if (currentLevel === 2) {
-                // Medium: 10 seconds visible, then 5 seconds faded
-                fadeTime = 10000;
-                hideTime = 15000;
             } else {
                 // Hard: 5 seconds visible, then 5 seconds faded
                 fadeTime = 5000;
