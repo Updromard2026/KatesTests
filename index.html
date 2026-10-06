@@ -822,8 +822,26 @@
             const words = getWords();
             const wordText = words[currentWordIndex].word;
             const utterance = new SpeechSynthesisUtterance(wordText);
-            utterance.rate = 0.8;
-            utterance.pitch = 1;
+
+            // Set Irish English language
+            utterance.lang = 'en-IE';
+
+            // Try to find a female Irish voice
+            const voices = window.speechSynthesis.getVoices();
+            const femaleIrishVoice = voices.find(voice =>
+                voice.lang.startsWith('en-IE') && voice.name.toLowerCase().includes('female')
+            ) || voices.find(voice =>
+                voice.lang.startsWith('en-IE')
+            );
+            if (femaleIrishVoice) {
+                utterance.voice = femaleIrishVoice;
+            }
+
+            // Adjust pitch and rate for natural female Irish speech
+            utterance.rate = 0.85;
+            utterance.pitch = 1.2;
+            utterance.volume = 1;
+
             window.speechSynthesis.cancel();
             window.speechSynthesis.speak(utterance);
         }
