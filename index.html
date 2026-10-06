@@ -979,18 +979,34 @@
                 wordTimer.forEach(timer => clearTimeout(timer));
             }
 
-            // Fade to 15% after 10 seconds
+            // Set fade timers based on difficulty level
+            let fadeTime, hideTime;
+            if (currentLevel === 1) {
+                // Easy: 10 seconds visible, then 10 seconds faded
+                fadeTime = 10000;
+                hideTime = 20000;
+            } else if (currentLevel === 2) {
+                // Medium: 10 seconds visible, then 5 seconds faded
+                fadeTime = 10000;
+                hideTime = 15000;
+            } else {
+                // Hard: 5 seconds visible, then 5 seconds faded
+                fadeTime = 5000;
+                hideTime = 10000;
+            }
+
+            // Fade to 15% opacity
             let timer1 = setTimeout(() => {
                 wordDisplay.style.opacity = '0.15';
                 wordDisplay.style.cursor = 'pointer';
                 wordDisplay.title = 'Click to show word again';
-            }, 10000);
+            }, fadeTime);
 
-            // Disappear completely after another 10 seconds (20 total)
+            // Disappear completely
             let timer2 = setTimeout(() => {
                 wordDisplay.style.opacity = '0';
                 wordDisplay.style.visibility = 'hidden';
-            }, 20000);
+            }, hideTime);
 
             wordTimer = [timer1, timer2];
 
