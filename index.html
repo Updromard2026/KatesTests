@@ -1058,6 +1058,11 @@
             saveStats();
         }
 
+        function removeFadas(text) {
+            // Remove Irish accents/diacritical marks (fadas)
+            return text.normalize('NFD').replace(/[̀-ͯ]/g, '');
+        }
+
         function checkAnswer() {
             console.log('checkAnswer() called, answered:', answered);
             if (answered) return;
@@ -1070,7 +1075,15 @@
 
             answered = true;
 
-            if (userAnswer === correctWord) {
+            // For Irish words, ignore fadas when checking
+            let isCorrect = false;
+            if (currentLanguage === 'irish') {
+                isCorrect = removeFadas(userAnswer) === removeFadas(correctWord);
+            } else {
+                isCorrect = userAnswer === correctWord;
+            }
+
+            if (isCorrect) {
                 correctAnswer = true;
                 score++;
                 updateWordStats(true);
